@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vector — How the GTM Pipeline Works</title>
+<style>
+  :root {
+    --brand:#33409B; --brand-700:#2A3580; --brand-50:#EEF1FB; --brand-100:#DDE3F7; --brand-200:#BCC7EF;
+    --ink-900:#0F1420; --ink-800:#1F2733; --ink-700:#374151; --ink-600:#4B5563; --ink-500:#6B7688;
+    --ink-400:#A6B0C0; --ink-300:#D3DAE6; --ink-200:#E5E9F0; --ink-100:#F1F5F9; --ink-50:#F8FAFC;
+    --ok-bg:#E7F6EE; --ok:#116335; --warn-bg:#FBF3E2; --warn:#8A5A0B; --danger-bg:#FBEAEA; --danger:#8E2727;
+    --info-bg:#E9F0FB; --info:#1E4A8F; --violet-bg:#F3EDFB; --violet:#5B3F9E;
+    --radius:10px; --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+    --sans:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--ink-50); color:var(--ink-800); font-family:var(--sans);
+    font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+  a { color:var(--brand); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  .wrap { display:grid; grid-template-columns:248px 1fr; max-width:1180px; margin:0 auto; }
+
+  /* Sidebar TOC */
+  nav.toc { position:sticky; top:0; align-self:start; height:100vh; overflow:auto;
+    padding:28px 20px; border-right:1px solid var(--ink-200); background:#fff; }
+  nav.toc .mark { display:flex; align-items:center; gap:10px; margin-bottom:22px; }
+  nav.toc .logo { width:30px; height:30px; border-radius:8px; background:var(--brand);
+    display:flex; align-items:center; justify-content:center; }
+  nav.toc .logo svg { width:17px; height:17px; }
+  nav.toc .brand-name { font-weight:700; color:var(--ink-900); font-size:16px; line-height:1; }
+  nav.toc .brand-sub { font-size:11px; color:var(--ink-500); }
+  nav.toc a { display:block; color:var(--ink-600); font-size:13.5px; padding:5px 10px;
+    border-radius:6px; font-weight:500; }
+  nav.toc a:hover { background:var(--ink-100); text-decoration:none; color:var(--ink-900); }
+  nav.toc .grp { font-size:10.5px; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--ink-400); font-weight:700; margin:18px 0 6px 10px; }
+
+  main { padding:44px 52px 120px; min-width:0; }
+  .hero h1 { font-size:34px; line-height:1.15; letter-spacing:-.02em; color:var(--ink-900); margin:0 0 10px; }
+  .hero p.lead { font-size:17px; color:var(--ink-600); margin:0 0 8px; max-width:70ch; }
+  .pill { display:inline-flex; align-items:center; gap:7px; background:var(--brand-50);
+    color:var(--brand-700); font-size:12px; font-weight:600; padding:5px 11px; border-radius:999px; }
+
+  section { margin-top:52px; scroll-margin-top:24px; }
+  h2 { font-size:24px; letter-spacing:-.01em; color:var(--ink-900); margin:0 0 4px;
+    display:flex; align-items:center; gap:12px; }
+  h2 .num { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px;
+    background:var(--brand); color:#fff; border-radius:8px; font-size:15px; font-weight:700; }
+  h3 { font-size:17px; color:var(--ink-900); margin:26px 0 8px; }
+  p { margin:10px 0; max-width:74ch; }
+  .muted { color:var(--ink-500); }
+
+  .card { background:#fff; border:1px solid var(--ink-200); border-radius:var(--radius); padding:22px 24px; margin:16px 0; }
+  .card.tight { padding:16px 18px; }
+
+  .callout { border:1px solid var(--ink-200); border-left:3px solid var(--brand); background:#fff;
+    border-radius:8px; padding:14px 18px; margin:16px 0; }
+  .callout.ex { border-left-color:var(--ok); background:var(--ok-bg); border-color:transparent; }
+  .callout.ex .tag { color:var(--ok); }
+  .callout.warn { border-left-color:var(--warn); background:var(--warn-bg); border-color:transparent; }
+  .callout.warn .tag { color:var(--warn); }
+  .callout .tag { display:block; font-size:11px; font-weight:700; text-transform:uppercase;
+    letter-spacing:.05em; color:var(--brand-700); margin-bottom:4px; }
+  .callout p { margin:4px 0; }
+
+  code { font-family:var(--mono); font-size:12.5px; background:var(--ink-100); color:var(--ink-800);
+    padding:2px 6px; border-radius:5px; }
+  pre { background:var(--ink-900); color:#E6EAF2; border-radius:10px; padding:16px 18px; overflow:auto;
+    font-family:var(--mono); font-size:12.5px; line-height:1.6; margin:14px 0; }
+  pre .c { color:#8FA0BF; }   /* comment */
+  pre .k { color:#8BB4F7; }   /* keyword */
+  pre .s { color:#8FD0A0; }   /* string */
+  pre .n { color:#E4B978; }   /* number/name */
+
+  table { border-collapse:collapse; width:100%; margin:14px 0; font-size:13.5px; }
+  th,td { text-align:left; padding:9px 12px; border-bottom:1px solid var(--ink-200); vertical-align:top; }
+  th { font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-500);
+    background:var(--ink-50); font-weight:700; }
+  td code { font-size:12px; }
+
+  .badge { display:inline-block; font-size:11px; font-weight:600; padding:2px 8px; border-radius:5px; }
+  .b-ok { background:var(--ok-bg); color:var(--ok); }
+  .b-info { background:var(--info-bg); color:var(--info); }
+  .b-warn { background:var(--warn-bg); color:var(--warn); }
+  .b-violet { background:var(--violet-bg); color:var(--violet); }
+  .b-brand { background:var(--brand-50); color:var(--brand-700); }
+  .b-neutral { background:var(--ink-100); color:var(--ink-600); }
+
+  /* Pipeline flow diagram */
+  .flow { display:flex; align-items:stretch; gap:0; flex-wrap:wrap; margin:22px 0; }
+  .flow .step { flex:1 1 150px; min-width:150px; background:#fff; border:1px solid var(--ink-200);
+    border-radius:10px; padding:14px; position:relative; }
+  .flow .step .s-ico { width:34px; height:34px; border-radius:8px; display:flex; align-items:center;
+    justify-content:center; font-size:17px; margin-bottom:8px; }
+  .flow .step h4 { margin:0 0 3px; font-size:13.5px; color:var(--ink-900); }
+  .flow .step p { margin:0; font-size:12px; color:var(--ink-500); line-height:1.45; max-width:none; }
+  .flow .arrow { display:flex; align-items:center; color:var(--ink-400); font-size:20px; padding:0 6px; }
+  .i-scout { background:var(--info-bg); color:var(--info); }
+  .i-radar { background:var(--ok-bg); color:var(--ok); }
+  .i-det { background:var(--violet-bg); color:var(--violet); }
+  .i-pulse { background:var(--brand-50); color:var(--brand-700); }
+  .i-db { background:var(--warn-bg); color:var(--warn); }
+  .i-fe { background:var(--ink-100); color:var(--ink-700); }
+
+  /* stage block */
+  .stage { display:grid; grid-template-columns:44px 1fr; gap:16px; margin:18px 0; }
+  .stage .rail { display:flex; flex-direction:column; align-items:center; }
+  .stage .dot { width:34px; height:34px; border-radius:50%; background:var(--brand); color:#fff;
+    display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex:none; }
+  .stage .line { flex:1; width:2px; background:var(--ink-200); margin-top:6px; }
+  .stage .body { padding-bottom:8px; }
+
+  .agent-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:12px; margin:14px 0; }
+  .agent { border:1px solid var(--ink-200); border-radius:9px; padding:13px 15px; background:#fff; }
+  .agent .an { font-weight:600; color:var(--ink-900); font-size:13.5px; }
+  .agent .ad { font-size:12.5px; color:var(--ink-500); margin-top:3px; line-height:1.45; }
+  .agent .io { font-family:var(--mono); font-size:11px; color:var(--brand-700); margin-top:7px;
+    background:var(--brand-50); padding:4px 7px; border-radius:5px; display:inline-block; }
+
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:14px 0; }
+  .kpi { border:1px solid var(--ink-200); border-radius:10px; padding:14px 16px; background:#fff; }
+  .kpi .l { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-500); font-weight:600; }
+  .kpi .v { font-size:26px; font-weight:700; color:var(--ink-900); margin-top:5px; }
+
+  hr { border:0; border-top:1px solid var(--ink-200); margin:20px 0; }
+  .foot { margin-top:60px; color:var(--ink-400); font-size:12px; }
+  @media (max-width:900px){ .wrap{grid-template-columns:1fr;} nav.toc{display:none;} main{padding:28px 22px;} .kpis{grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav class="toc">
+  <div class="mark">
+    <span class="logo"><svg viewBox="0 0 16 16" fill="none"><path d="M2 3.5L8 12.5L14 3.5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <div><div class="brand-name">Vector</div><div class="brand-sub">Pipeline guide</div></div>
+  </div>
+  <div class="grp">Start here</div>
+  <a href="#tldr">The short version</a>
+  <a href="#trigger">1 · How a run is triggered</a>
+  <a href="#overview">2 · The whole pipeline at a glance</a>
+  <div class="grp">The stages</div>
+  <a href="#stage-run">3 · Run is created</a>
+  <a href="#stage-radar">4 · Scout · Radar</a>
+  <a href="#stage-detective">5 · Scout · Detective</a>
+  <a href="#stage-pulse">6 · Pulse · Campaigns</a>
+  <a href="#stage-done">7 · Run finishes</a>
+  <div class="grp">Data → screen</div>
+  <a href="#storage">8 · Where it's stored</a>
+  <a href="#frontend">9 · How the UI shows it</a>
+  <a href="#analytics">10 · How analytics work</a>
+  <a href="#example">11 · One full example</a>
+  <a href="#safety">12 · Safety</a>
+</nav>
+
+<main>
+  <div class="hero">
+    <span class="pill">● Vector GTM Engine — technical walkthrough</span>
+    <h1>How the Vector pipeline runs<br/>— and how it reaches the dashboard</h1>
+    <p class="lead">A plain-English tour of what happens from the moment you start the engine on the backend,
+      through every stage and AI agent, to the exact way accounts, people, campaigns and analytics light up in the CRM.</p>
+  </div>
+
+  <!-- TLDR -->
+  <section id="tldr">
+    <h2><span class="num">★</span>The short version</h2>
+    <div class="card">
+      <p style="margin-top:0">Vector is a <strong>go-to-market (GTM) engine</strong>. You give it an ideal-customer profile;
+      it goes and finds companies that are showing "buying signals" (like raising money or hiring),
+      figures out <em>who</em> the decision-makers are, drafts personalized outreach for email + LinkedIn,
+      and records everything so your team can watch the pipeline in a clean dashboard.</p>
+      <p>It has three modules, each a small team of AI <strong>agents</strong>:</p>
+      <table>
+        <tr><th>Module</th><th>Job</th><th>Real-world analogy</th></tr>
+        <tr><td><span class="badge b-info">Scout</span></td><td>Find companies &amp; the right people</td><td>A researcher who reads the news and LinkedIn all day</td></tr>
+        <tr><td><span class="badge b-brand">Pulse</span></td><td>Write &amp; run email + LinkedIn sequences</td><td>An SDR who never forgets a follow-up</td></tr>
+        <tr><td><span class="badge b-neutral">Compass</span></td><td>Deal / meeting guidance <span class="muted">(planned)</span></td><td>A sales manager reviewing next steps</td></tr>
+      </table>
+      <p style="margin-bottom:0">Everything a run discovers is saved to <strong>one SQLite database</strong>, and the CRM reads
+      that database through a <strong>read-only API</strong>. The frontend never controls the engine — it only shows what the engine found.</p>
+    </div>
+  </section>
+
+  <!-- TRIGGER -->
+  <section id="trigger">
+    <h2><span class="num">1</span>How a run is triggered</h2>
+    <p>Runs are a <strong>backend-only</strong> action. There is no button in the app, and the trigger endpoint doesn't exist —
+      the only way to start the engine is a command on the server:</p>
+    <pre><span class="c"># Start a live run for one workspace (account), find up to 6 companies</span>
+python -m backend.manage <span class="k">run-pipeline</span> --email team@vector.ai --max-leads <span class="n">6</span></pre>
+    <p>That command does three simple things before any AI runs:</p>
+    <ol>
+      <li>Looks up the account and its <strong>workspace</strong> (every account has its own isolated workspace).</li>
+      <li>Refuses to run on the <strong>demo account</strong> (that one is pre-filled sample data and stays read-only).</li>
+      <li>Creates a <code>PipelineRun</code> row with <code>status = "running"</code> so progress can be tracked.</li>
+    </ol>
+    <div class="callout"><span class="tag">Why backend-only?</span>
+      <p>Live runs spend money (LLM calls) and touch the outside world (news sites, search). Keeping the trigger on the
+      server means no accidental clicks, no runaway costs from the UI, and a single audited place where runs begin.</p>
+    </div>
+    <div class="callout warn"><span class="tag">The frontend can watch, not touch</span>
+      <p>The UI polls <code>GET /api/pipeline/runs</code> every few seconds purely to <em>display</em> a live run's stage and
+      counts. That's a read. It cannot start, stop, or change a run.</p>
+    </div>
+  </section>
+
+  <!-- OVERVIEW -->
+  <section id="overview">
+    <h2><span class="num">2</span>The whole pipeline at a glance</h2>
+    <p>One run flows left-to-right through the stages below. Each box hands its results to the next, and every result is
+      written to the database as it's produced (so the dashboard fills in progressively, not all at the end).</p>
+
+    <div class="flow">
+      <div class="step"><div class="s-ico i-scout">🎯</div><h4>Trigger</h4><p>Backend command creates a run</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="s-ico i-radar">📡</div><h4>Scout · Radar</h4><p>Find companies with buying signals + score them</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="s-ico i-det">🕵️</div><h4>Scout · Detective</h4><p>Find decision-makers + their emails</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="s-ico i-pulse">📨</div><h4>Pulse</h4><p>Autonomous outreach: sequence, send*, reply, book (*safe mode = simulated)</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="s-ico i-db">🗄️</div><h4>Database</h4><p>Everything saved to SQLite</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="s-ico i-fe">🖥️</div><h4>CRM UI</h4><p>Reads the API &amp; renders</p></div>
+    </div>
+
+    <p class="muted">The <code>stage</code> field on the run moves through:
+      <code>queued</code> → <code>scout_radar</code> → <code>scout_detective</code> → <code>pulse_outreach</code> → <code>done</code>.</p>
+
+    <h3>Module wiring status (what the pipeline actually drives)</h3>
+    <table>
+      <tr><th>Module</th><th>Wired into the pipeline?</th><th>Notes</th></tr>
+      <tr><td><span class="badge b-ok">Scout · Radar</span></td><td><strong>✓ Fully</strong> — real <code>NewsRadarPipeline</code></td><td>Selector → LeadExtraction → CompanyEnricher → ICPRating → save. (Doesn't extract firmographics like employee-count yet.)</td></tr>
+      <tr><td><span class="badge b-ok">Scout · Detective</span></td><td><strong>✓ Fully</strong> — real <code>DetectivePipeline</code></td><td>Profile find → extract → email enrichment. Default email finder is keyless (pattern + SMTP-verify + Gravatar); Apollo &amp; PDL are built and switch on when enabled.</td></tr>
+      <tr><td><span class="badge b-brand">Pulse</span></td><td><strong>✓ Fully</strong> — real engine, SAFE mode</td><td>Sequencing, warmup, caps, window, A/B bandit, replies, meetings, autopilot — all active; sends simulated until <code>VECTOR_PULSE_LIVE=1</code>.</td></tr>
+      <tr><td><span class="badge b-neutral">Closer · Compass</span></td><td><strong>✗ Not built</strong></td><td>Still a stub in the engine — nothing to wire yet. Today "closing" = Pulse's <code>meeting</code>/<code>booked</code> statuses + booked-meeting records.</td></tr>
+    </table>
+  </section>
+
+  <!-- STAGE: RUN -->
+  <section id="stage-run">
+    <h2><span class="num">3</span>Stage 0 — the run is created</h2>
+    <div class="stage">
+      <div class="rail"><div class="dot">0</div><div class="line"></div></div>
+      <div class="body">
+        <p>A single row is inserted so the whole run is trackable and the UI can show progress. Think of it as the "job ticket".</p>
+        <pre><span class="c"># pipeline_runs table row</span>
+{ id: <span class="n">1</span>, workspace_id: <span class="n">2</span>, status: <span class="s">"running"</span>, stage: <span class="s">"queued"</span>,
+  companies_found: <span class="n">0</span>, people_found: <span class="n">0</span>, enrolled: <span class="n">0</span>, messages_sent: <span class="n">0</span>,
+  started_at: <span class="s">"2026-07-22T15:00Z"</span> }</pre>
+        <p class="muted">As each later stage completes it updates these counters, so a half-finished run still shows real numbers.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGE: RADAR -->
+  <section id="stage-radar">
+    <h2><span class="num">4</span>Stage 1 — Scout · Radar <span class="badge b-ok" style="margin-left:6px">finds companies</span></h2>
+    <div class="stage">
+      <div class="rail"><div class="dot">1</div><div class="line"></div></div>
+      <div class="body">
+        <p>Radar reads recent tech news, decides which articles describe a real company doing something noteworthy
+          (a "buying signal"), and scores how well that company fits your ideal customer profile (ICP). Code entry point:
+          <code>NewsRadarPipeline.run()</code>.</p>
+
+        <h3>The agents involved</h3>
+        <div class="agent-grid">
+          <div class="agent"><div class="an">SelectorAgent</div><div class="ad">Looks at a news page's HTML and figures out where the article links/headlines are.</div><div class="io">HTML → CSS selectors</div></div>
+          <div class="agent"><div class="an">LeadExtractionAgent</div><div class="ad">Reads an article and extracts: is this a lead? which company? what signal?</div><div class="io">article → LeadInsight</div></div>
+          <div class="agent"><div class="an">CompanyEnricher</div><div class="ad">Finds the company's website &amp; LinkedIn URL.</div><div class="io">name → website, linkedin</div></div>
+          <div class="agent"><div class="an">ICPRatingAgent</div><div class="ad">Scores fit 0–100 &amp; tier A–D, with reasons for and against.</div><div class="io">insight → ICPRating</div></div>
+        </div>
+
+        <div class="callout ex"><span class="tag">Real example</span>
+          <p>Article: <em>"Supabase hit $5B by turning down million-dollar contracts."</em></p>
+          <p>→ LeadExtractionAgent says: company = <strong>Supabase</strong>, signal = <span class="badge b-ok">funding</span>.<br/>
+             → ICPRatingAgent says: score <strong>38</strong>, tier <strong>C</strong>, "strong funding signal, but core product is a database, not an AI-agent platform."</p>
+        </div>
+
+        <h3>What gets saved</h3>
+        <p>For each qualified company (score ≥ 35), the run writes a <code>Company</code> row plus its <code>Signal</code> history and
+          the ICP reasons (as <code>ICPCriterion</code> rows). The run's <code>companies_found</code> counter ticks up live.</p>
+        <pre><span class="c"># one Company + nested rows</span>
+Company  { name:<span class="s">"Supabase"</span>, slug:<span class="s">"supabase"</span>, signal_type:<span class="s">"funding"</span>,
+           icp_score:<span class="n">38</span>, icp_tier:<span class="s">"C"</span>, qualified:<span class="k">true</span>, website_url:<span class="s">"supabase.com"</span> }
+Signal   { signal_type:<span class="s">"funding"</span>, headline:<span class="s">"Supabase hit $5B…"</span>, confidence:<span class="n">0.85</span> }
+Criteria { kind:<span class="s">"matched"</span>, text:<span class="s">"Strong funding signal — budget available"</span> }</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGE: DETECTIVE -->
+  <section id="stage-detective">
+    <h2><span class="num">5</span>Stage 2 — Scout · Detective <span class="badge b-violet" style="margin-left:6px">finds people</span></h2>
+    <div class="stage">
+      <div class="rail"><div class="dot">2</div><div class="line"></div></div>
+      <div class="body">
+        <p>Now that we have companies, Detective finds the <strong>decision-makers</strong> at each one (Founder, CEO, CTO, Head of AI,
+          VP Eng, Head of Product) and tries to get a real, verified email. Code entry point: <code>DetectivePipeline.run()</code>.</p>
+
+        <h3>The agents involved</h3>
+        <div class="agent-grid">
+          <div class="agent"><div class="an">ProfileFinder</div><div class="ad">Web-searches for people in target roles at the company.</div><div class="io">company + roles → candidates</div></div>
+          <div class="agent"><div class="an">ProfileExtractionAgent</div><div class="ad">Turns messy search results into clean people: name, title, LinkedIn, confidence.</div><div class="io">results → DecisionMaker[]</div></div>
+          <div class="agent"><div class="an">EmailFinder</div><div class="ad">Finds/guesses the email &amp; marks it verified / guessed / unverified (via patterns, Apollo/PDL, MX checks).</div><div class="io">person → email + status</div></div>
+        </div>
+
+        <div class="callout ex"><span class="tag">Real example</span>
+          <p>For Supabase, Detective returns <strong>Paul Copplestone — CEO</strong>, LinkedIn found, email
+            <code>paul@supabase.com</code> marked <span class="badge b-ok">verified</span> (95% confidence).</p>
+        </div>
+
+        <div class="callout"><span class="tag">Email finding — providers</span>
+          <p>By default the finder is <strong>keyless</strong>: it generates likely address patterns, SMTP-verifies them,
+            and cross-checks Gravatar → so emails come back <em>verified / guessed / unverified</em>. Two premium
+            providers, <strong>Apollo</strong> and <strong>PDL</strong>, are fully built and switch on via one config
+            setting (they consume API credits, so they stay off unless enabled).</p>
+        </div>
+
+        <h3>What gets saved</h3>
+        <p>Each person becomes a <code>Person</code> row linked to its company, plus a timeline <code>Event</code>
+          ("Identified as CEO at Supabase"). The <code>people_found</code> counter updates.</p>
+        <pre>Person { name:<span class="s">"Paul Copplestone"</span>, role_category:<span class="s">"CEO"</span>, email:<span class="s">"paul@supabase.com"</span>,
+         email_status:<span class="s">"verified"</span>, linkedin_url:<span class="s">"/in/paulcopplestone"</span>, company → Supabase }
+Event  { type:<span class="s">"decision_maker_found"</span>, title:<span class="s">"Identified as CEO at Supabase"</span> }</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGE: PULSE -->
+  <section id="stage-pulse">
+    <h2><span class="num">6</span>Stage 3 — Pulse · Campaigns <span class="badge b-brand" style="margin-left:6px">builds outreach</span></h2>
+    <div class="stage">
+      <div class="rail"><div class="dot">3</div><div class="line"></div></div>
+      <div class="body">
+        <p>Pulse turns people into <strong>outreach</strong>. It makes sure the workspace has a <strong>Campaign</strong>, and every
+          campaign owns <strong>two sequences</strong>: one for <span class="badge b-info">Email</span> and one for
+          <span class="badge b-info">LinkedIn</span>. Each sequence is a series of steps, and each step can have A/B message variants.</p>
+
+        <h3>The structure it creates</h3>
+        <pre>Campaign  <span class="s">"Outbound — Qualified Leads"</span>
+ ├─ Sequence (email)     → Step 1 Intro → Step 2 Value → Step 3 Bump → Step 4 Breakup
+ │                          each Step has Variant(s): subject + body templates
+ └─ Sequence (linkedin)  → Step 1 Invite → Step 2 Intro msg → Step 3 Value → Step 4 Breakup
+                            (invite must be accepted before messaging)</pre>
+
+        <p>Then Pulse runs its <strong>autopilot cycle</strong> — the fully autonomous outreach loop. It's the real engine, not a
+          simplified stand-in, so every safety and optimization behavior below is active:</p>
+
+        <div class="agent-grid">
+          <div class="agent"><div class="an">Scheduler (per channel)</div><div class="ad">Advances each person step-by-step, waiting <code>wait_days</code> between touches. Only sends inside the send window (8–18, Mon–Fri).</div><div class="io">due people → next step</div></div>
+          <div class="agent"><div class="an">Warmup + caps</div><div class="ad">A new mailbox sends only <strong>10/day</strong>, ramping <strong>+5/day</strong> to a 40 cap (LinkedIn: 5 → +3 → 20 invites; 40 msgs). Protects deliverability.</div><div class="io">mailbox → today's allowance</div></div>
+          <div class="agent"><div class="an">WriterAgent / FollowUpAgent</div><div class="ad">LLM-writes each email personalized to the person + signal (not a static template).</div><div class="io">person → subject/body</div></div>
+          <div class="agent"><div class="an">A/B bandit (Thompson)</div><div class="ad">Picks the best-performing message variant per step and auto-promotes a winner once it's statistically ahead.</div><div class="io">variants → winner</div></div>
+          <div class="agent"><div class="an">LinkedIn accept gate</div><div class="ad">Sends an invite, waits for acceptance, then messages. Expires stale invites after 21 days.</div><div class="io">invite → accept → message</div></div>
+          <div class="agent"><div class="an">ReplyClassifier + ConversationAgent</div><div class="ad">Reads replies, classifies them (interested / objection / OOO / unsubscribe…), and drafts the right response — or escalates to a human.</div><div class="io">reply → action</div></div>
+          <div class="agent"><div class="an">SchedulingAgent</div><div class="ad">When someone's interested, proposes real open calendar slots and books the meeting.</div><div class="io">reply → booked meeting</div></div>
+        </div>
+
+        <div class="callout ex"><span class="tag">Real example — for Paul</span>
+          <p>Day 0: email step 1 (LLM-written) sent + LinkedIn invite sent. Day 3: follow-up email; invite accepted → intro message.
+          Paul replies "interested" → ConversationAgent answers and the SchedulingAgent offers 3 slots → books a 30-min intro call.
+          The winning subject-line variant gets promoted for everyone else.</p>
+        </div>
+
+        <div class="callout warn"><span class="tag">Master safety switch — nothing is sent by default</span>
+          <p>All of the above runs in <strong>SAFE mode</strong> unless <code>VECTOR_PULSE_LIVE=1</code> is set on the server:</p>
+          <p>• <strong>Email:</strong> dry-run — messages advance state (steps, threading, warmup, A/B stats) but <strong>no SMTP/IMAP socket is ever opened</strong>.<br/>
+          • <strong>LinkedIn:</strong> a mock provider simulates invites/accepts/replies — <strong>no real LinkedIn traffic</strong>.<br/>
+          • <strong>Calendar:</strong> a mock calendar — no real events.</p>
+          <p>So a pipeline run exercises the entire autonomous system end-to-end and fills the CRM with realistic state, while sending exactly nothing. Flipping the one switch to <code>1</code> (with mailbox / LinkedIn / calendar credentials) is what makes it send for real.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STAGE: DONE -->
+  <section id="stage-done">
+    <h2><span class="num">7</span>Stage 4 — the run finishes</h2>
+    <div class="stage">
+      <div class="rail"><div class="dot">4</div></div>
+      <div class="body">
+        <p>The run row is stamped <code>status: "succeeded"</code>, <code>stage: "done"</code>, with final counts and a finish time.
+          If any stage throws (bad network, missing key, a news site blocking scraping), the run is marked
+          <code>failed</code> and the exact error is stored — the UI shows it plainly instead of pretending it worked.</p>
+        <pre>{ status:<span class="s">"succeeded"</span>, stage:<span class="s">"done"</span>, companies_found:<span class="n">5</span>,
+  people_found:<span class="n">11</span>, enrolled:<span class="n">14</span>, messages_sent:<span class="n">14</span>,
+  finished_at:<span class="s">"2026-07-22T15:07Z"</span> }</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORAGE -->
+  <section id="storage">
+    <h2><span class="num">8</span>Where everything is stored</h2>
+    <p>One <strong>SQLite database</strong> (<code>data/vector.db</code>) holds it all — no scattered JSON files. Every row belongs to a
+      <strong>workspace</strong>, so the demo account and each real account are fully separated.</p>
+    <table>
+      <tr><th>Table</th><th>Holds</th><th>Filled by</th></tr>
+      <tr><td><code>workspaces</code> / <code>users</code></td><td>Accounts &amp; isolation</td><td>Backend account setup</td></tr>
+      <tr><td><code>companies</code>, <code>signals</code>, <code>icp_criteria</code></td><td>Accounts &amp; why they fit</td><td>Radar</td></tr>
+      <tr><td><code>people</code></td><td>Decision-makers &amp; emails</td><td>Detective</td></tr>
+      <tr><td><code>campaigns</code> → <code>sequences</code> → <code>sequence_steps</code> → <code>variants</code></td><td>Outreach plays (email + LinkedIn)</td><td>Pulse</td></tr>
+      <tr><td><code>enrollments</code>, <code>messages</code></td><td>Who's in a sequence + drafted messages</td><td>Pulse</td></tr>
+      <tr><td><code>events</code></td><td>The activity timeline</td><td>Every stage</td></tr>
+      <tr><td><code>pipeline_runs</code></td><td>Run progress &amp; results</td><td>The orchestrator</td></tr>
+    </table>
+    <div class="callout"><span class="tag">The bridge to the UI</span>
+      <p>A <strong>FastAPI</strong> server exposes this database as read-only JSON endpoints
+        (<code>/api/companies</code>, <code>/api/people</code>, <code>/api/campaigns</code>, <code>/api/dashboard</code>,
+        <code>/api/analytics</code>…). The CRM only talks to these endpoints.</p>
+    </div>
+  </section>
+
+  <!-- FRONTEND -->
+  <section id="frontend">
+    <h2><span class="num">9</span>How the UI shows it (and stays fresh)</h2>
+    <p>The frontend is a <strong>window</strong>, not a control panel. Here's the loop:</p>
+
+    <div class="flow">
+      <div class="step"><div class="s-ico i-db">🗄️</div><h4>SQLite</h4><p>Run wrote results here</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="s-ico i-fe">🔌</div><h4>FastAPI</h4><p>Serves read-only JSON</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="s-ico i-scout">🔑</div><h4>You log in</h4><p>Token scopes you to your workspace</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="s-ico i-pulse">🖥️</div><h4>Pages fetch</h4><p>Each page GETs the data it needs</p></div>
+      <div class="arrow">→</div>
+      <div class="step"><div class="s-ico i-radar">🔄</div><h4>Auto-refresh</h4><p>On run success, pages reload</p></div>
+    </div>
+
+    <h3>Two ways the data appears</h3>
+    <ol>
+      <li><strong>On page load / navigation:</strong> each page calls its endpoint —
+        People → <code>GET /api/people</code>, Companies → <code>GET /api/companies</code>,
+        a campaign → <code>GET /api/campaigns/{id}</code>, and so on. Filters, search and paging are query params, so the
+        <em>server</em> does the filtering (fast, even with lots of rows).</li>
+      <li><strong>While a run is happening:</strong> a small provider polls <code>GET /api/pipeline/runs</code>. When it sees a run flip
+        from <code>running</code> to <code>succeeded</code>, it bumps an internal <code>dataVersion</code> counter. Every page listens to that
+        counter and silently re-fetches — so new companies/people "appear" without a manual refresh.</li>
+    </ol>
+
+    <div class="callout"><span class="tag">Plain-words version</span>
+      <p>The engine fills a database. The website keeps asking the database "anything new?" and redraws when the answer changes.
+        The website itself never does any GTM work — it just paints the latest picture.</p>
+    </div>
+
+    <h3>The one thing the UI <em>can</em> change</h3>
+    <p>You can <strong>edit a sequence's message</strong> (subject/body of a variant) and <strong>pause/activate a campaign</strong>.
+      Those are the only writes, they go to <code>PATCH</code> endpoints, and they're blocked on the demo account. Nothing about
+      editing a draft sends it.</p>
+  </section>
+
+  <!-- ANALYTICS -->
+  <section id="analytics">
+    <h2><span class="num">10</span>How analytics &amp; the dashboard are handled</h2>
+    <p>Nothing is precomputed or faked. When you open <strong>Analytics</strong> or the <strong>Dashboard</strong>, the API runs quick
+      counting queries over your workspace's rows and returns tidy numbers the page draws as KPIs, a funnel, and a campaign table.</p>
+
+    <h3>What gets counted</h3>
+    <table>
+      <tr><th>Metric</th><th>How it's computed</th></tr>
+      <tr><td>Companies / People / Qualified</td><td>Row counts in your workspace</td></tr>
+      <tr><td>Contacted</td><td>Distinct people who have at least one enrollment</td></tr>
+      <tr><td>Replies</td><td>Enrollments whose status is replied / in&nbsp;conversation / meeting / booked</td></tr>
+      <tr><td>Meetings</td><td>Enrollments in status meeting or booked</td></tr>
+      <tr><td>Reply rate</td><td>replies ÷ contacted</td></tr>
+      <tr><td>ICP tier mix / signal mix</td><td>Group-by counts on the companies table</td></tr>
+      <tr><td>Per-campaign metrics</td><td>Same logic scoped to one campaign's enrollments</td></tr>
+    </table>
+
+    <div class="callout ex"><span class="tag">Example — what the demo dashboard shows</span>
+      <div class="kpis">
+        <div class="kpi"><div class="l">Companies</div><div class="v">44</div></div>
+        <div class="kpi"><div class="l">Contacted</div><div class="v">69</div></div>
+        <div class="kpi"><div class="l">Replies</div><div class="v">15</div></div>
+        <div class="kpi"><div class="l">Reply rate</div><div class="v">21.7%</div></div>
+      </div>
+      <p class="muted" style="margin-bottom:0">The funnel bars (Qualified → Contacted → Replied → Meetings) are just these
+        counts drawn as proportional bars; the campaign table lists each campaign with its own enrolled / replied / reply-rate.</p>
+    </div>
+
+    <p>Because the numbers are computed on request from live rows, they're always consistent with what you see on the
+      People and Companies pages — there's a single source of truth.</p>
+  </section>
+
+  <!-- EXAMPLE -->
+  <section id="example">
+    <h2><span class="num">11</span>One full example, start to finish</h2>
+    <div class="card">
+      <table>
+        <tr><th>#</th><th>What happens</th><th>Where you'd see it</th></tr>
+        <tr><td>1</td><td>Backend command starts a run for <code>team@vector.ai</code></td><td>—</td></tr>
+        <tr><td>2</td><td><span class="badge b-ok">Radar</span> reads news, finds "Supabase raised at $5B", scores it 38/Tier C, saves the company + signal</td><td>Companies page, a new row; Dashboard "fresh signals"</td></tr>
+        <tr><td>3</td><td><span class="badge b-violet">Detective</span> finds Paul Copplestone (CEO), verified email, saves the person + a timeline event</td><td>People page; the person's drawer → Activity</td></tr>
+        <tr><td>4</td><td><span class="badge b-brand">Pulse</span> ensures a Campaign, enrolls Paul in the Email + LinkedIn sequences, drafts step-1 messages</td><td>Campaigns page; person drawer → Sequences; Enrolled tab</td></tr>
+        <tr><td>5</td><td>Run marked <span class="badge b-ok">succeeded</span> (e.g. 5 companies, 11 people, 14 enrolled)</td><td>Run status chip stops spinning</td></tr>
+        <tr><td>6</td><td>UI's <code>dataVersion</code> bumps → every open page silently re-fetches</td><td>Everything updates without a manual reload</td></tr>
+        <tr><td>7</td><td>Analytics recomputes counts from the new rows</td><td>Dashboard &amp; Analytics KPIs/funnel move</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <!-- SAFETY -->
+  <section id="safety">
+    <h2><span class="num">12</span>Safety &amp; guarantees</h2>
+    <div class="card">
+      <p style="margin-top:0"><span class="badge b-ok">✓</span> <strong>The frontend cannot trigger a run.</strong> No button, and the trigger endpoint returns 404. Login, reload, navigation and polling are all read-only.</p>
+      <p><span class="badge b-ok">✓</span> <strong>No signup.</strong> Accounts are created only from the backend; the UI is sign-in only.</p>
+      <p><span class="badge b-ok">✓</span> <strong>Nothing sends unless one switch is on.</strong> The full autonomous engine (multi-step sequencing, warmup, caps, send-window, A/B bandit, reply handling, meeting booking) is wired into the pipeline, but runs in SAFE mode — dry-run email, mock LinkedIn, mock calendar — until <code>VECTOR_PULSE_LIVE=1</code> is set on the server.</p>
+      <p style="margin-bottom:0"><span class="badge b-warn">•</span> <strong>Runs are paused</strong> until you explicitly ask to run one. The demo account stays fully populated and untouched.</p>
+    </div>
+    <p class="foot">Vector · GTM engine pipeline walkthrough · generated for the Humwork.ai team.</p>
+  </section>
+
+</main>
+</div>
+</body>
+</html>

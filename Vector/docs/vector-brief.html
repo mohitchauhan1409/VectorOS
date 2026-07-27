@@ -1,0 +1,651 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vector: The GTM Engine That Runs Itself</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+
+  :root{
+    --paper:#FAF5E9;
+    --paper-card:#FFFDF7;
+    --ink:#242B25;
+    --ink-soft:#5B6459;
+    --line:#D9D0BA;
+    --amber:#C07A2B;
+    --amber-bg:#F6E7CE;
+    --teal:#1F6F63;
+    --teal-bg:#DCEEE9;
+    --sage:#4C7A4A;
+    --sage-bg:#E3EEDE;
+    --rose:#A8433A;
+    --rose-bg:#F3E0DC;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; background:#E8E1CE; color:var(--ink);
+    font-family:'Inter',sans-serif; font-size:15px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  html{overflow-x:hidden;}
+  h1,h2,p,.rowlabel,.analogy,.foot-quote,.taglabel{overflow-wrap:break-word;}
+  /* let flex items shrink below their content so nothing forces horizontal scroll */
+  .lane,.flowrow,.flowrow .achip,.hstep,.stagebox,.notecard,.inputcard,.endnode{min-width:0;}
+
+  .hand{font-family:'Kalam',cursive;}
+  .disp{font-family:'Space Grotesk',sans-serif;}
+
+  /* paper texture */
+  .page{
+    position:relative;
+    width:100%; max-width:1300px; min-height:900px; margin:26px auto;
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(192,122,43,0.05), transparent 40%),
+      radial-gradient(ellipse at 90% 85%, rgba(31,111,99,0.06), transparent 45%),
+      var(--paper);
+    border:1px solid #cfc5a8;
+    box-shadow:0 18px 40px rgba(30,25,10,0.18);
+    padding:44px 58px 50px;
+    overflow:hidden;
+  }
+  .page::before{
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.5;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(0,0,0,0.012) 0px, transparent 1px, transparent 2px),
+      repeating-linear-gradient(90deg, rgba(0,0,0,0.012) 0px, transparent 1px, transparent 2px);
+  }
+
+  .pagefoot{
+    position:absolute; bottom:20px; left:58px; right:58px;
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:11px; color:var(--ink-soft); letter-spacing:.03em;
+  }
+  .pagefoot .num{font-family:'Space Grotesk'; font-weight:700; color:var(--ink);}
+
+  /* ===== masthead ===== */
+  .mast{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .brand{display:flex; align-items:center; gap:12px;}
+  .brand .mark{width:40px;height:40px;}
+  .brand .name{font-family:'Space Grotesk'; font-weight:700; font-size:23px; letter-spacing:-.01em;}
+  .brand .sub{font-size:11px; color:var(--ink-soft); letter-spacing:.08em; text-transform:uppercase; margin-top:-2px;}
+  .stamp{
+    font-family:'Kalam'; font-weight:700; font-size:13px; color:var(--rose);
+    border:2px solid var(--rose); border-radius:8px; padding:5px 12px;
+    transform:rotate(-3deg); opacity:.85;
+  }
+
+  h1.hero{
+    font-family:'Space Grotesk'; font-weight:700; font-size:42px; line-height:1.08;
+    letter-spacing:-.02em; margin:10px 0 6px; max-width:900px;
+  }
+  h1.hero em{font-style:normal; color:var(--teal); position:relative;}
+  p.tagline{font-size:16.5px; color:var(--ink-soft); max-width:760px; margin:0 0 6px;}
+
+  /* ===== flow / diagram scaffolding ===== */
+  .flowcol{display:flex; flex-direction:column; align-items:center; gap:0; margin-top:8px;}
+  .rowlabel{
+    font-family:'Kalam'; font-weight:700; font-size:13px; color:var(--ink-soft);
+    text-align:center; margin-bottom:6px;
+  }
+
+  .inputcard{
+    background:var(--paper-card); border:2.5px solid var(--ink); border-radius:16px 30px 18px 26px/26px 16px 30px 18px;
+    box-shadow:3px 4px 0 rgba(36,43,37,0.10);
+    padding:12px 26px; display:flex; gap:22px; align-items:center;
+  }
+  .inputcard .chip{font-family:'Kalam'; font-weight:700; font-size:13.5px; background:var(--amber-bg); color:#7A4E17; border-radius:8px; padding:4px 10px;}
+
+  .stagebox{
+    width:100%; border:2.5px dashed var(--ink); border-radius:22px;
+    padding:18px 26px 20px; position:relative; background:rgba(255,253,247,0.55);
+  }
+  .stagebox .taglabel{
+    position:absolute; top:-16px; left:26px; background:var(--ink); color:var(--paper);
+    font-family:'Space Grotesk'; font-weight:700; font-size:13px; letter-spacing:.04em;
+    padding:5px 14px; border-radius:8px; text-transform:uppercase;
+  }
+  .stagebox .analogy{
+    position:absolute; bottom:100%; right:24px; margin-bottom:5px; font-family:'Kalam'; font-size:12.5px;
+    color:var(--ink-soft); max-width:340px; text-align:right; line-height:1.3;
+  }
+  .stagebox .analogy::before{content:"↳ "; }
+
+  .lane-row{display:flex; gap:16px; margin-top:6px;}
+  .lane{flex:1; border:1.5px solid var(--line); border-radius:14px; padding:10px 12px 12px; background:rgba(255,255,255,0.4);}
+  .lane .lname{font-family:'Space Grotesk'; font-weight:600; font-size:12.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:8px;}
+
+  .agentgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:9px;}
+  .agentgrid.cols3{grid-template-columns:repeat(3,1fr);}
+  .agentgrid.cols2{grid-template-columns:repeat(2,1fr);}
+
+  /* connected mini-pipeline: agents chained within a stage, not floating separately */
+  .flowrow{display:flex; align-items:stretch; gap:0;}
+  .flowrow .achip{flex:1; position:relative;}
+  .flowrow .parrow{flex:none; width:20px; display:flex; align-items:center; justify-content:center; z-index:1;}
+  .flowrow .parrow svg{width:14px; height:9px;}
+  .stepno{
+    display:inline-flex; align-items:center; justify-content:center; width:15px; height:15px;
+    border-radius:50%; background:var(--ink); color:var(--paper); font-family:'Space Grotesk';
+    font-weight:700; font-size:9px; margin-right:6px; margin-top:1px; flex:none;
+  }
+  .icowrap{display:inline-flex; align-items:center; justify-content:center; flex:none;}
+
+  /* Every agent card shares one fixed layout: number pinned top-left, a title
+     block that always reserves two lines, then the description — so the number,
+     title and content sit at the SAME position in every card, of every stage. */
+  .achip{
+    background:var(--paper-card); border:1.6px solid var(--ink); border-radius:9px 13px 9px 13px;
+    padding:9px 10px 9px; font-size:11.3px; line-height:1.34;
+    display:flex; flex-direction:column;
+  }
+  .achip .at{
+    font-family:'Space Grotesk'; font-weight:600; font-size:11.8px;
+    display:flex; align-items:flex-start; line-height:1.25;
+    min-height:30px; margin-bottom:6px;
+  }
+  .achip.teal{border-color:var(--teal);}
+  .achip.teal .at{color:var(--teal);}
+  .achip.brand{border-color:var(--amber);}
+  .achip.brand .at{color:#8A5A1E;}
+  .achip.compass{border-color:var(--rose);}
+  .achip.compass .at{color:var(--rose);}
+
+  .stagebox.pulse{border-color:var(--amber);}
+  .stagebox.compass{border-color:var(--rose);}
+  .stagebox.scout{border-color:var(--teal);}
+
+  .endnode{
+    display:flex; align-items:center; gap:14px; background:var(--ink); color:var(--paper);
+    border-radius:16px; padding:12px 22px; box-shadow:3px 4px 0 rgba(36,43,37,0.18);
+  }
+  .endnode .et{font-family:'Space Grotesk'; font-weight:700; font-size:14.5px;}
+  .endnode .ed{font-size:11.5px; color:#D9D8C8; margin-top:1px;}
+  .endnode.dash{background:var(--teal-bg); color:var(--ink); border:2px solid var(--teal);}
+  .endnode.dash .et{color:var(--teal);}
+  .endnode.dash .ed{color:var(--ink-soft);}
+
+  /* hand-drawn down arrow */
+  .darrow{width:70px; height:44px; margin:2px 0;}
+  .darrow path{fill:none; stroke:var(--ink); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
+
+  .foot-quote{
+    font-family:'Kalam'; font-size:13px; color:var(--ink-soft); text-align:center; margin-top:10px; max-width:820px;
+  }
+
+  @media print{
+    body{background:#fff;}
+    .page{box-shadow:none; margin:0; page-break-after:always; width:auto;}
+  }
+
+  /* ===== page 2 & 3 shared bits ===== */
+  .kicker{
+    font-family:'Kalam'; font-weight:700; font-size:13px; color:var(--ink-soft);
+    text-transform:uppercase; letter-spacing:.08em; margin:2px 0 2px;
+  }
+  h2.sec{
+    font-family:'Space Grotesk'; font-weight:700; font-size:27px; letter-spacing:-.01em;
+    margin:0 0 8px; display:flex; align-items:center; gap:11px;
+  }
+  h2.sec .no{
+    display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px;
+    border-radius:50%; font-family:'Kalam'; font-weight:700; font-size:15px; color:#fff; flex:none;
+  }
+  .rule{border:0; border-top:2px dashed var(--line); margin:18px 0;}
+
+  .split2{display:grid; grid-template-columns:1.15fr .85fr; gap:30px; align-items:start;}
+
+  .notecard{
+    background:var(--paper-card); border:2px solid var(--ink); border-radius:14px 24px 16px 22px/22px 14px 24px 16px;
+    box-shadow:3px 4px 0 rgba(36,43,37,0.08); padding:15px 19px;
+  }
+  .notecard.tilt{transform:rotate(-1.1deg);}
+  .notecard .lab{font-family:'Kalam'; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:.05em; margin-bottom:5px;}
+
+  p.plain{font-size:14.3px; margin:8px 0; max-width:66ch;}
+  p.plain strong{color:var(--ink);}
+
+  .hflow{display:flex; align-items:stretch; gap:0; margin:14px 0 6px;}
+  .hstep{
+    flex:1; background:var(--paper-card); border:1.8px solid var(--ink); border-radius:11px 15px 11px 15px;
+    padding:10px 12px; font-size:12px; position:relative; text-align:center;
+  }
+  .hstep .ico{display:flex; justify-content:center; margin-bottom:4px; color:var(--ink);}
+  .hstep .ico svg{width:18px; height:18px;}
+  .hstep b{display:block; font-family:'Space Grotesk'; font-size:12.5px; margin-bottom:2px;}
+  .harrow{flex:none; width:34px; display:flex; align-items:center; justify-content:center;}
+  .harrow svg{width:100%; height:16px;}
+
+  .example{
+    border-left:3px solid var(--amber); background:var(--amber-bg); border-radius:4px 12px 12px 4px;
+    padding:11px 16px; margin:12px 0; font-size:13px;
+  }
+  .example .lab{font-family:'Kalam'; font-weight:700; font-size:11.5px; color:#7A4E17; text-transform:uppercase; letter-spacing:.05em; margin-bottom:3px;}
+  .example.teal{border-color:var(--teal); background:var(--teal-bg);}
+  .example.teal .lab{color:var(--teal);}
+  .example.rose{border-color:var(--rose); background:var(--rose-bg);}
+  .example.rose .lab{color:var(--rose);}
+
+  .agentmini{display:flex; gap:9px; align-items:flex-start; margin:9px 0;}
+  .agentmini .dot2{width:9px;height:9px;border-radius:50%; margin-top:5px; flex:none;}
+  .agentmini b{font-family:'Space Grotesk'; font-size:13px;}
+  .agentmini span{display:block; font-size:12.6px; color:var(--ink-soft);}
+
+  .toggle-row{display:flex; align-items:center; gap:16px; margin:10px 0;}
+  .toggle{width:58px; height:30px; border-radius:20px; border:2.2px solid var(--ink); position:relative; flex:none;}
+  .toggle .knob{position:absolute; top:2px; width:20px; height:20px; border-radius:50%; background:var(--ink);}
+  .toggle.off .knob{left:3px;}
+  .toggle.on{background:var(--sage-bg); border-color:var(--sage);}
+  .toggle.on .knob{left:31px; background:var(--sage);}
+  .toggle-lab b{font-family:'Space Grotesk'; font-size:13px; display:block;}
+  .toggle-lab span{font-size:12px; color:var(--ink-soft);}
+
+  .calendarstrip{display:flex; gap:8px; margin:12px 0;}
+  .dayb{flex:1; border:1.6px solid var(--line); border-radius:10px; padding:8px 9px; background:var(--paper-card); font-size:11px;}
+  .dayb .d{font-family:'Space Grotesk'; font-weight:700; font-size:12px; color:var(--amber); margin-bottom:3px;}
+  .dayb.hit{border-color:var(--sage); background:var(--sage-bg);}
+  .dayb.hit .d{color:var(--sage);}
+
+  .timeline{display:flex; margin:16px 0 6px;}
+  .tstop{flex:1; position:relative; padding-top:22px; text-align:left; padding-right:14px;}
+  .tstop::before{content:""; position:absolute; top:8px; left:0; width:12px; height:12px; border-radius:50%; background:var(--ink); border:2.5px solid var(--paper);}
+  .tstop::after{content:""; position:absolute; top:13px; left:12px; right:0; height:2.4px; background:var(--line);}
+  .tstop:last-child::after{display:none;}
+  .tstop b{font-family:'Space Grotesk'; font-size:12.6px; display:block; margin-bottom:2px;}
+  .tstop span{font-size:11.6px; color:var(--ink-soft);}
+  .tstop.hi::before{background:var(--rose);}
+
+  /* ======================================================================
+     RESPONSIVE — the layout collapses gracefully on tablets & phones.
+     Desktop design is untouched; each breakpoint only stacks what would
+     otherwise overflow, and turns sideways arrows into downward ones.
+     ====================================================================== */
+
+  /* Tablets / small laptops */
+  @media (max-width: 1024px){
+    .page{ padding:36px 34px 48px; margin:16px auto; }
+    .mast{ flex-wrap:wrap; gap:10px; }
+    h1.hero{ font-size:36px; }
+    p.tagline{ font-size:15.5px; }
+    h2.sec{ font-size:24px; }
+    .stagebox{ max-width:100% !important; }
+
+    /* side-by-side lanes (Radar/Detective, and Compass's three) stack full-width */
+    .lane-row{ flex-direction:column; }
+
+    /* Pulse has the most steps — stack its pipeline first, arrows point down */
+    .stagebox.pulse .flowrow{ flex-direction:column; gap:9px; }
+    .stagebox.pulse .flowrow .achip{ flex:1 1 auto !important; width:100%; }
+    .stagebox.pulse .flowrow .parrow{ width:100% !important; height:14px; }
+    .stagebox.pulse .flowrow .parrow svg{ transform:rotate(90deg); }
+
+    /* two-column text blocks → one column */
+    .split2{ grid-template-columns:1fr; gap:22px; }
+    .notecard.tilt{ transform:none !important; }
+
+    /* end nodes stack, connector points down */
+    .endrow{ flex-direction:column !important; align-items:stretch !important; gap:14px !important; }
+    .endrow > svg{ transform:rotate(90deg); align-self:center; }
+
+    /* horizontal timeline → vertical list */
+    .timeline{ flex-direction:column; }
+    .tstop{ padding:0 0 16px 22px; }
+    .tstop::before{ top:3px; left:0; }
+    .tstop::after{ top:15px; left:5px; width:2.4px; height:calc(100% - 6px); right:auto; }
+    .tstop:last-child::after{ display:none; }
+
+    .calendarstrip{ flex-wrap:wrap; }
+    .dayb{ flex:1 1 46%; }
+    .inputcard{ flex-wrap:wrap; gap:12px 16px; justify-content:center; }
+    .pagefoot{ left:34px; right:34px; }
+  }
+
+  /* Tablet portrait / large phones — stack every in-stage pipeline */
+  @media (max-width: 768px){
+    .page{ padding:28px 22px 46px; }
+    h1.hero{ font-size:30px; }
+    h2.sec{ font-size:22px; }
+
+    .flowrow{ flex-direction:column; gap:9px; }
+    .flowrow .achip{ flex:1 1 auto !important; width:100%; }
+    .flowrow .parrow{ width:100% !important; height:14px; }
+    .flowrow .parrow svg{ transform:rotate(90deg); }
+
+    /* horizontal step row (page 2) → vertical */
+    .hflow{ flex-direction:column; gap:9px; }
+    .harrow{ display:none; }
+
+    /* stage header flows top-to-bottom (label, then caption, then content) */
+    .stagebox{ padding-top:16px; }
+    .stagebox .taglabel{ position:static; display:inline-block; top:auto; left:auto; margin:0 0 8px; }
+    .stagebox .analogy{ position:static; text-align:left; max-width:100%; margin:0 0 12px; }
+  }
+
+  /* Phones */
+  @media (max-width: 560px){
+    .page{ padding:20px 15px 44px; margin:8px auto; }
+    .mast{ flex-direction:column; align-items:flex-start; }
+    .brand .name{ font-size:20px; }
+    .stamp{ font-size:11.5px; padding:4px 9px; transform:rotate(-2deg); }
+    h1.hero{ font-size:23px; line-height:1.16; max-width:100%; }
+    h1.hero br{ display:none; }   /* let the headline flow naturally on phones */
+    p.tagline{ font-size:13.6px; max-width:100%; }
+    .inputcard{ max-width:100%; flex-wrap:wrap; justify-content:flex-start; gap:8px 12px; }
+    .inputcard .chip{ white-space:normal; }
+    h2.sec{ font-size:19px; }
+    h2.sec .no{ width:28px; height:28px; font-size:14px; }
+    p.plain{ font-size:13.6px; }
+    .foot-quote{ font-size:12px; }
+
+    .stagebox{ padding:16px 15px 18px; }
+    .dayb{ flex:1 1 100%; }
+    .endnode{ padding:12px 16px; }
+
+    /* footer sits after content instead of pinned, so it never overlaps */
+    .pagefoot{ position:static; left:auto; right:auto; margin-top:20px; padding-top:12px; border-top:1px dashed var(--line); }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ============ PAGE 1 — FULL PIPELINE ============ -->
+<section class="page" id="page1">
+
+  <div class="mast">
+    <div class="brand">
+      <div>
+        <div class="name">Vector</div>
+        <div class="sub">The Full GTM Engine</div>
+      </div>
+    </div>
+    <div class="stamp">built and run as a real, working system</div>
+  </div>
+
+  <h1 class="hero">One engine finds your buyers,<br/>talks to them, and gets you to <em>close</em>.</h1>
+  <p class="tagline">This is the full pipeline: every stage, every AI agent, start to finish. It runs on its own,
+    writes everything to one place, and never sends a real message until you say so.</p>
+
+  <div class="flowcol" style="margin-top:14px;">
+
+    <div class="rowlabel">STEP 0 · YOU SET THE TARGET</div>
+    <div class="inputcard">
+      <span class="chip">Ideal customer profile</span>
+      <span class="chip">Target roles</span>
+      <span class="chip">"Go find me leads"</span>
+    </div>
+
+    <svg class="darrow" viewBox="0 0 70 44"><path d="M35 2 C33 16 37 26 35 40 M35 40 L26 30 M35 40 L44 30"/></svg>
+
+    <!-- SCOUT -->
+    <div class="stagebox scout" style="max-width:1160px;">
+      <span class="taglabel" style="background:var(--teal);">Stage 1 · Scout finds companies &amp; people</span>
+      <span class="analogy">reads every relevant news source and LinkedIn profile in your market, all day, every day</span>
+      <div class="lane-row">
+        <div class="lane">
+          <div class="lname">Radar: turns a headline into a scored company</div>
+          <div class="flowrow">
+            <div class="achip teal"><span class="at"><span class="stepno">1</span>Selector</span>Scans live news feeds and pulls out the real article links, skipping the noise</div>
+            <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <div class="achip teal"><span class="at"><span class="stepno">2</span>Lead Extraction</span>Reads the article and decides if it's a real buying signal, not just noise</div>
+            <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <div class="achip teal"><span class="at"><span class="stepno">3</span>Company Enricher</span>Finds the company's site and LinkedIn page in seconds</div>
+            <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <div class="achip teal"><span class="at"><span class="stepno">4</span>ICP Rating</span>Scores the fit 0 to 100 and grades it A to D</div>
+          </div>
+        </div>
+        <div class="lane">
+          <div class="lname">Detective: turns a company into a verified contact</div>
+          <div class="flowrow">
+            <div class="achip teal"><span class="at"><span class="stepno">1</span>Profile Finder</span>Searches for the right decision-maker at that company</div>
+            <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <div class="achip teal"><span class="at"><span class="stepno">2</span>Profile Extraction</span>Turns the raw search results into one clean contact card</div>
+            <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+            <div class="achip teal"><span class="at"><span class="stepno">3</span>Email Finder</span>Finds and verifies a real, working email address</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <svg class="darrow" viewBox="0 0 70 44"><path d="M35 2 C33 16 37 26 35 40 M35 40 L26 30 M35 40 L44 30"/></svg>
+
+    <!-- PULSE -->
+    <div class="stagebox pulse" style="max-width:1160px;">
+      <span class="taglabel" style="background:var(--amber);">Stage 2 · Pulse reaches out &amp; books meetings</span>
+      <span class="analogy">an SDR who never forgets a follow-up and never sleeps</span>
+      <div class="flowrow" style="margin-top:4px; flex-wrap:wrap;">
+        <div class="achip brand" style="flex:1 1 150px;"><span class="at"><span class="stepno">1</span>Scheduler</span>Times every email &amp; LinkedIn touch, Mon-Fri, business hours only</div>
+        <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div class="achip brand" style="flex:1 1 150px;"><span class="at"><span class="stepno">2</span>Warmup &amp; Caps</span>Ramps volume slowly so your domain reputation stays clean</div>
+        <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div class="achip brand" style="flex:1 1 150px;"><span class="at"><span class="stepno">3</span>Writer Agent</span>Drafts every email &amp; LinkedIn message personally, never a template</div>
+        <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div class="achip brand" style="flex:1 1 150px;"><span class="at"><span class="stepno">4</span>A/B Bandit</span>Quietly tests message variants and keeps whichever gets more replies</div>
+        <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div class="achip brand" style="flex:1 1 150px;"><span class="at"><span class="stepno">5</span>Reply Reader</span>Reads replies, classifies intent, drafts the right response</div>
+        <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div class="achip brand" style="flex:1 1 150px;"><span class="at"><span class="stepno">6</span>Meeting Booker</span>Offers real open slots and books the call</div>
+      </div>
+    </div>
+
+    <svg class="darrow" viewBox="0 0 70 44"><path d="M35 2 C33 16 37 26 35 40 M35 40 L26 30 M35 40 L44 30"/></svg>
+
+    <!-- COMPASS -->
+    <div class="stagebox compass" style="max-width:1160px;">
+      <span class="taglabel" style="background:var(--rose);">Stage 3 · Compass helps you close</span>
+      <span class="analogy">a sales manager reviewing the call &amp; prepping your next move</span>
+      <div class="flowrow" style="margin-top:4px;">
+        <div class="achip compass"><span class="at"><span class="stepno">1</span>Next Steps Agent</span>Turns the meeting into a clear, assigned action list</div>
+        <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div class="achip compass"><span class="at"><span class="stepno">2</span>Follow-up Booker</span>Proposes times and books the next call automatically</div>
+        <div class="parrow"><svg viewBox="0 0 14 9"><path d="M1 4.5 H11 M11 4.5 L7 1 M11 4.5 L7 8" fill="none" stroke="#5B6459" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <div class="achip compass"><span class="at"><span class="stepno">3</span>Proposal Insights</span>Pulls pricing and budget signals straight from the call</div>
+      </div>
+    </div>
+
+    <svg class="darrow" viewBox="0 0 70 44"><path d="M35 2 C33 16 37 26 35 40 M35 40 L26 30 M35 40 L44 30"/></svg>
+
+    <div class="endrow" style="display:flex; gap:26px; align-items:center;">
+      <div class="endnode dash">
+        <span class="icowrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>
+        <div><div class="et">One database</div><div class="ed">everything ever found, said, or booked</div></div>
+      </div>
+      <svg width="46" height="20" viewBox="0 0 46 20"><path d="M2 10 C16 4 30 16 44 10 M44 10 L36 5 M44 10 L36 15" fill="none" stroke="#242B25" stroke-width="2.4" stroke-linecap="round"/></svg>
+      <div class="endnode">
+        <span class="icowrap"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+        <div><div class="et">Your dashboard</div><div class="ed">live, read-only, always up to date</div></div>
+      </div>
+    </div>
+
+    <p class="foot-quote">Every arrow above is a real, working handoff, not a mockup. Pages 2 and 3 walk through exactly how each stage thinks.</p>
+  </div>
+
+  <div class="pagefoot"><span>Vector · The GTM Engine</span><span class="num">01 / 03</span></div>
+</section>
+
+<!-- ============ PAGE 2 — SCOUT + PULSE ============ -->
+<section class="page" id="page2">
+
+  <div class="mast">
+    <div class="brand">
+      <div><div class="name" style="font-size:19px;">Vector</div></div>
+    </div>
+    <div class="kicker">Part 2 · How the first two stages actually think</div>
+  </div>
+
+  <h2 class="sec"><span class="no" style="background:var(--teal);">1</span>Finding exactly who to talk to</h2>
+  <div class="split2">
+    <div>
+      <p class="plain">Every morning, <strong>Radar</strong> reads tech news the way a sharp researcher would, not to
+        collect articles, but to spot the ones that mean <em>"this company is about to spend money."</em> A funding round,
+        a hiring spree, a product launch. Each one it finds gets scored against your ideal customer profile, 0 to 100,
+        with a plain-English reason attached, so nothing gets added to your pipeline without a reason you'd agree with.</p>
+      <p class="plain">Once a company clears the bar, <strong>Detective</strong> goes and finds the actual human to talk to,
+        the founder, the CEO, the head of the department that would buy this, and doesn't stop at a name. It finds a real,
+        verified email address, checked three different ways, so your first message doesn't bounce.</p>
+      <div class="example teal">
+        <div class="lab">Example, start to finish</div>
+        A headline drops: "Company X raises a $12M Series A to expand engineering." Radar reads it, tags it as a
+        <strong>funding signal</strong>, and scores the company <strong>82/100, Tier A</strong>, a strong signal and a
+        strong fit. Detective then finds the <strong>CEO</strong> and a verified email, <strong>95% confidence</strong>,
+        in under a minute.
+      </div>
+    </div>
+    <div class="notecard tilt">
+      <div class="lab" style="color:var(--teal);">What Scout replaces</div>
+      <p class="plain" style="margin-top:0;">An SDR spending 2 hours a day scrolling news and LinkedIn, guessing at
+        email addresses, and still missing the good ones. Scout does this for every company in your market, continuously,
+        and never gets tired of page 4 of Google.</p>
+      <hr class="rule" style="margin:12px 0;">
+      <div class="agentmini"><span class="dot2" style="background:var(--teal);"></span><div><b>Speed</b><span>Minutes, not a workday</span></div></div>
+      <div class="agentmini"><span class="dot2" style="background:var(--teal);"></span><div><b>Coverage</b><span>Every relevant signal, every day</span></div></div>
+      <div class="agentmini"><span class="dot2" style="background:var(--teal);"></span><div><b>Proof</b><span>A reason attached to every score</span></div></div>
+    </div>
+  </div>
+
+  <div class="hflow">
+    <div class="hstep"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h13v16H4z"/><path d="M17 8h3v10a2 2 0 0 1-2 2H6"/><path d="M7 8h7M7 11h7M7 14h4"/></svg></span><b>Signal spotted</b>funding, hiring, launch</div>
+    <div class="harrow"><svg viewBox="0 0 34 16"><path d="M1 8 H30 M30 8 L23 3 M30 8 L23 13" fill="none" stroke="#242B25" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+    <div class="hstep"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4.3"/><circle cx="12" cy="12" r="1"/></svg></span><b>Scored &amp; qualified</b>0-100 fit, tier A-D</div>
+    <div class="harrow"><svg viewBox="0 0 34 16"><path d="M1 8 H30 M30 8 L23 3 M30 8 L23 13" fill="none" stroke="#242B25" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+    <div class="hstep"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3.4"/><path d="M5 20c0-4 3.2-6.5 7-6.5s7 2.5 7 6.5"/></svg></span><b>Decision-maker found</b>name, title, LinkedIn</div>
+    <div class="harrow"><svg viewBox="0 0 34 16"><path d="M1 8 H30 M30 8 L23 3 M30 8 L23 13" fill="none" stroke="#242B25" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+    <div class="hstep"><span class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 6l9 7 9-7"/></svg></span><b>Verified email</b>ready for outreach</div>
+  </div>
+
+  <hr class="rule">
+
+  <h2 class="sec"><span class="no" style="background:var(--amber);">2</span>Reaching out, without anyone dropping the ball</h2>
+  <div class="split2">
+    <div>
+      <p class="plain"><strong>Pulse</strong> is the part that behaves like your best SDR, minus the human limits.
+        It writes a personal email and a LinkedIn message for every single person, not a mail-merge, an actual
+        draft written for that person and that signal. Then it follows up on schedule, automatically, for as long
+        as it takes to get an answer.</p>
+      <p class="plain">Email and LinkedIn are run as one coordinated sequence, not two separate efforts. The email goes
+        out first alongside a LinkedIn connection request; once that invite is accepted, Pulse folds LinkedIn into the
+        same follow-up rhythm as the email thread, so a prospect never gets a duplicate touch or a message that ignores
+        what already happened on the other channel. It also protects your reputation: new mailboxes start slow and ramp
+        up gradually so you never look like a spam operation. It quietly tests a couple of versions of every message and
+        keeps whichever one gets more replies. And when someone replies "interested," Pulse reads that reply, drafts the
+        right response, and offers real open slots on your calendar, booking the meeting without another email in between.</p>
+      <div class="example">
+        <div class="lab">Example, continuing the story</div>
+        Day 0: personalized email and LinkedIn invite go out together. Day 3: a follow-up lands, and the invite gets
+        accepted, so LinkedIn joins the same thread. The prospect replies <strong>"interested"</strong>, Pulse answers,
+        offers three time slots, and books a <strong>30-minute intro call</strong>. The subject line that got the reply
+        is now used for everyone else too.
+      </div>
+    </div>
+    <div class="notecard tilt" style="transform:rotate(0.9deg);">
+      <div class="lab" style="color:#8A5A1E;">The trust part, in plain words</div>
+      <p class="plain" style="margin-top:0;">This is the part founders worry about most, so it's the most locked-down.
+        The entire autopilot, writing, sending, replying, booking, runs for real inside the system. But nothing
+        touches the outside world until you flip <strong>one switch</strong>.</p>
+      <div class="toggle-row">
+        <div class="toggle off"><div class="knob"></div></div>
+        <div class="toggle-lab"><b>Switch off (default)</b><span>Every step runs, nothing is actually sent</span></div>
+      </div>
+      <div class="toggle-row">
+        <div class="toggle on"><div class="knob"></div></div>
+        <div class="toggle-lab"><b>Switch on</b><span>Real emails, real LinkedIn, real calendar</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="calendarstrip">
+    <div class="dayb"><div class="d">Day 0</div>Email + LinkedIn invite sent</div>
+    <div class="dayb"><div class="d">Day 3</div>Follow-up sent · invite accepted</div>
+    <div class="dayb hit"><div class="d">Day 5</div>Reply "interested" → answered</div>
+    <div class="dayb hit"><div class="d">Day 6</div>30-min call booked on calendar</div>
+  </div>
+
+  <div class="pagefoot"><span>Vector · The GTM Engine</span><span class="num">02 / 03</span></div>
+</section>
+
+<!-- ============ PAGE 3 — COMPASS + FULL PICTURE ============ -->
+<section class="page" id="page3">
+
+  <div class="mast">
+    <div class="brand">
+      <div><div class="name" style="font-size:19px;">Vector</div></div>
+    </div>
+    <div class="kicker">Part 3 · Getting from meeting to closed deal</div>
+  </div>
+
+  <h2 class="sec"><span class="no" style="background:var(--rose);">3</span>Compass: a sales manager for every single call</h2>
+  <p class="plain" style="max-width:900px;">The meeting is booked, and that's normally where the automation stops and the
+    manual scramble begins: writing up notes, remembering to follow up, chasing a second meeting, guessing at pricing.
+    <strong>Compass</strong> picks up right where Pulse leaves off, and does that scramble for you, the moment the call ends.</p>
+
+  <div class="lane-row" style="margin-top:14px;">
+    <div class="lane" style="border-color:var(--rose); background:rgba(255,253,247,0.6);">
+      <div class="lname" style="color:var(--rose);">Next Steps Agent</div>
+      <p class="plain" style="font-size:13px; margin:2px 0 0;">Listens back through the call and turns it into a short,
+        clear action list, who owes what, and by when, instead of you re-listening to a recording that evening.</p>
+    </div>
+    <div class="lane" style="border-color:var(--rose); background:rgba(255,253,247,0.6);">
+      <div class="lname" style="color:var(--rose);">Follow-up Booker</div>
+      <p class="plain" style="font-size:13px; margin:2px 0 0;">If the call ended with "let's continue this," it proposes
+        real open times and books the next call itself, no "does Tuesday work?" email chain.</p>
+    </div>
+    <div class="lane" style="border-color:var(--rose); background:rgba(255,253,247,0.6);">
+      <div class="lname" style="color:var(--rose);">Proposal Insights</div>
+      <p class="plain" style="font-size:13px; margin:2px 0 0;">Pulls out what was actually said about budget, timeline
+        and must-haves, so the proposal you send matches the conversation, not a generic price sheet.</p>
+    </div>
+  </div>
+
+  <div class="example rose">
+    <div class="lab">Example, right after the call</div>
+    A 30-minute call happens. Compass reads it and produces: a <strong>3-item next-steps list</strong>
+    (send the case study, loop in their technical lead, share security docs) assigned with due dates; a
+    <strong>follow-up call booked</strong> for the following week since the prospect asked to "get the team in the room";
+    and a note flagging a <strong>Q3 budget of $40-60k</strong> straight onto the deal, so the proposal starts at the
+    right number instead of a guess.
+  </div>
+
+  <hr class="rule">
+
+  <h2 class="sec" style="font-size:21px;">One continuous thread, not three separate tools</h2>
+  <div class="timeline">
+    <div class="tstop"><b>Signal spotted</b><span>Funding round announced</span></div>
+    <div class="tstop"><b>Person found</b><span>CEO, verified email</span></div>
+    <div class="tstop"><b>Outreach sent</b><span>Email + LinkedIn, personalized</span></div>
+    <div class="tstop"><b>Meeting booked</b><span>Prospect replies, call scheduled</span></div>
+    <div class="tstop hi"><b>Call happens</b><span>Compass listens in</span></div>
+    <div class="tstop hi"><b>Next steps + follow-up</b><span>Action list, next call booked</span></div>
+    <div class="tstop hi"><b>Proposal-ready</b><span>Real budget number in hand</span></div>
+  </div>
+  <p class="plain muted" style="color:var(--ink-soft); font-size:12.8px;">Every one of those seven moments is the same
+    person row in the same database, open that profile at any point and you see the entire story, not a scattered
+    set of tools that don't talk to each other.</p>
+
+  <div class="split2" style="margin-top:16px;">
+    <div class="notecard tilt">
+      <div class="lab">What this means for you, concretely</div>
+      <div class="agentmini"><span class="dot2" style="background:var(--sage);"></span><div><b>Hours back every week</b><span>No manual research, drafting, or scheduling</span></div></div>
+      <div class="agentmini"><span class="dot2" style="background:var(--sage);"></span><div><b>Nothing falls through</b><span>Every lead gets the same disciplined follow-up</span></div></div>
+      <div class="agentmini"><span class="dot2" style="background:var(--sage);"></span><div><b>One live dashboard</b><span>See exactly where every deal stands, today</span></div></div>
+      <div class="agentmini"><span class="dot2" style="background:var(--sage);"></span><div><b>You stay in control</b><span>Nothing external happens until you approve it</span></div></div>
+    </div>
+    <div class="notecard tilt" style="transform:rotate(0.7deg);">
+      <div class="lab" style="color:var(--rose);">Who built this</div>
+      <p class="plain" style="font-size:13px; margin-top:0;">I'm Mohit, a founding engineer at Bachatt. I love building
+        things end to end, so I put this whole pipeline together myself, Scout, Pulse and Compass, wired into one
+        system that actually runs. This isn't a product pitch or an agency offer; it's something I built and use, and
+        I wanted to share it because I think it can help you scale without adding headcount. Happy to walk you through
+        exactly how it works, and to build it out further with you.</p>
+    </div>
+  </div>
+
+  <div class="pagefoot"><span>Vector · The GTM Engine</span><span class="num">03 / 03</span></div>
+</section>
+
+</body>
+</html>

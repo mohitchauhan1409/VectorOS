@@ -1,0 +1,38 @@
+# --- Core ---
+python-dotenv>=1.0.1
+
+# --- Backend API + persistence ---
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+sqlalchemy>=2.0.0
+python-multipart>=0.0.9
+
+# --- Agent framework ---
+langchain>=0.3.0
+langchain-core>=0.3.0
+langchain-community>=0.3.0
+
+# --- LLM providers ---
+langchain-anthropic>=0.3.0     # Claude
+anthropic>=0.40.0
+langchain-google-genai>=2.0.0  # Gemini
+google-generativeai>=0.8.0
+
+# --- Web scraping / parsing ---
+beautifulsoup4>=4.12.0
+lxml>=5.0.0
+
+# --- Web search (keyless fallback for GoogleSearchTool) ---
+ddgs>=9.0.0
+
+# --- Email finding: MX lookups for the SMTP-verify fallback ---
+dnspython>=2.6.0
+
+# --- Utilities ---
+pydantic>=2.0.0
+httpx>=0.27.0
+
+# --- Scheduling: Google Calendar (optional; only for PULSE_CALENDAR_PROVIDER=google) ---
+# google-api-python-client>=2.0.0
+# google-auth-httplib2>=0.2.0
+# google-auth-oauthlib>=1.2.0

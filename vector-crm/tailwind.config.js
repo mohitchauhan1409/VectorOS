@@ -1,0 +1,87 @@
+/** @type {import('tailwindcss').Config} */
+// Tokens mirror DESIGN_SPEC.md §10 exactly.
+export default {
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        gray: {
+          50: '#F8FAFC',
+          100: '#F1F5F9',
+          200: '#E5E9F0',
+          300: '#D3DAE6',
+          400: '#A6B0C0',
+          500: '#6B7688',
+          600: '#4B5563',
+          700: '#374151',
+          800: '#1F2733',
+          900: '#0F1420',
+        },
+        brand: {
+          50: '#EEF1FB',
+          100: '#DDE3F7',
+          200: '#BCC7EF',
+          400: '#5B6ED0',
+          500: '#3E4FB8',
+          600: '#33409B',
+          700: '#2A3580',
+          800: '#212A66',
+        },
+        canvas: '#F8FAFC',
+        surface: '#FFFFFF',
+        sunken: '#F1F5F9',
+        hairline: '#E5E9F0',
+        'hairline-strong': '#D3DAE6',
+        success: { bg: '#E7F6EE', DEFAULT: '#1F9D57', text: '#116335' },
+        warning: { bg: '#FBF3E2', DEFAULT: '#C9871B', text: '#8A5A0B' },
+        danger: { bg: '#FBEAEA', DEFAULT: '#D24141', text: '#8E2727' },
+        info: { bg: '#E9F0FB', DEFAULT: '#2F6FD0', text: '#1E4A8F' },
+      },
+      fontFamily: {
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+        mono: ['JetBrains Mono', 'SF Mono', 'ui-monospace', 'Menlo', 'monospace'],
+      },
+      fontSize: {
+        '2xs': ['11px', { lineHeight: '14px' }],
+        xs: ['12px', { lineHeight: '16px' }],
+        sm: ['13px', { lineHeight: '18px' }],
+        base: ['14px', { lineHeight: '20px' }],
+        md: ['15px', { lineHeight: '22px' }],
+        lg: ['16px', { lineHeight: '24px' }],
+        xl: ['20px', { lineHeight: '28px' }],
+        '2xl': ['24px', { lineHeight: '32px' }],
+        '3xl': ['30px', { lineHeight: '36px' }],
+      },
+      fontWeight: {
+        normal: '400',
+        medium: '550',
+        semibold: '600',
+        bold: '650',
+        heavy: '700',
+      },
+      borderRadius: {
+        xs: '4px',
+        sm: '6px',
+        DEFAULT: '6px',
+        md: '8px',
+        lg: '8px',
+        full: '9999px',
+      },
+      boxShadow: {
+        xs: '0 1px 2px rgba(15,20,32,0.04)',
+        sm: '0 2px 6px rgba(15,20,32,0.06)',
+        md: '0 8px 24px rgba(15,20,32,0.10)',
+        lg: '0 16px 48px rgba(15,20,32,0.14)',
+      },
+      maxWidth: {
+        content: '1440px',
+      },
+      transitionDuration: {
+        100: '100ms',
+        120: '120ms',
+        180: '180ms',
+      },
+    },
+  },
+  plugins: [],
+}
