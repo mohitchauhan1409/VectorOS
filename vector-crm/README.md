@@ -2,7 +2,7 @@
 
 A professional GTM command center — the front-end dashboard for the **Vector** go-to-market engine. Every lead, company, buying signal, and multi-channel outreach sequence produced by Vector's Scout / Pulse / Closer modules surfaces here in one clean, dense, operator-grade interface.
 
-> **Phase 1** — runs entirely on realistic sample data that mirrors Vector's real schemas (`Lead`, `DecisionMaker`, `Campaign`/`SequenceStep`/`Variant`, `Recipient`, `Prospect`). No pipeline integration yet.
+> **Requires the backend.** This app reads all of its data from the Vector API at `http://localhost:8787` and has a login screen — it will not work on its own. Start `Vector/run_api.py` first. See the [root README](../README.md) for full setup instructions.
 
 ## Stack
 
@@ -13,13 +13,21 @@ A professional GTM command center — the front-end dashboard for the **Vector**
 
 ## Run it
 
+Start the backend first (in another terminal), then:
+
 ```bash
 cd vector-crm
 npm install
 npm run dev
 ```
 
-Then open **http://localhost:5273**.
+Then open **http://localhost:5273** and sign in with the demo account — `demo@vector.ai` / `demo1234`.
+
+Point it at a non-default API host with `vector-crm/.env.local`:
+
+```env
+VITE_API_URL=http://localhost:9000
+```
 
 Other scripts:
 
@@ -35,8 +43,10 @@ npm run preview   # serve the production build
 | `/` | **Dashboard** — KPIs, pipeline funnel, fresh buying signals, top accounts, active sequences, activity feed |
 | `/people` | **People** — dense table of decision-makers with global + list search, multi-field filters, bulk actions, and a rich detail drawer |
 | `/companies` | **Companies** — accounts ranked by ICP fit, signal timeline, decision-makers, ICP rationale drawer |
-| `/sequences` | **Sequences (Pulse)** — email & LinkedIn plays; a step-by-step builder with A/B variants, editable subject/body, merge-tag chips, per-step stats, and the LinkedIn invite→accept→message flow |
+| `/campaigns` | **Campaigns (Pulse)** — email & LinkedIn plays; a step-by-step builder with A/B variants, editable subject/body, merge-tag chips, per-step stats, and the LinkedIn invite→accept→message flow |
 | `/analytics` | **Analytics** — funnel, reply-rate trend, per-sequence performance |
+
+Placeholders (routed, not yet built): `/lists`, `/inbox`, `/signals`, `/settings`, `/help`.
 
 ## Design reference
 
@@ -44,4 +54,6 @@ npm run preview   # serve the production build
 
 ## Data model
 
-All sample data is generated deterministically in `src/lib/data.ts` from seed pools, shaped to match the Vector engine exactly. Types live in `src/lib/types.ts`; derived views in `src/lib/queries.ts`. To wire real data in Phase 2, swap the exports in `src/lib/data.ts` for API calls — the rest of the app reads through `queries.ts`.
+Every network call lives in `src/lib/api.ts` — components never call `fetch` directly, so auth headers, 401 handling, and error shaping stay in one place. Shared types are in `src/lib/types.ts`, login state in `src/lib/auth.tsx`, and the async-fetch hook in `src/lib/useAsync.ts`.
+
+The backend seeds a demo workspace (47 companies, 102 people) on first boot, so the UI is populated without running the live engine. Rebuild it any time with `python -m backend.manage seed-demo --force` from the `Vector/` folder.
